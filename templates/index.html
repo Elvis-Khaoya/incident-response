@@ -4,149 +4,71 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Incident Response Assistant</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
-    body {
-      background-color: #0d1117;
-      color: #e6edf3;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-    header {
-      background-color: #161b22;
-      border-bottom: 1px solid #30363d;
-    }
-    .chat-container {
-      flex: 1;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 1rem;
-    }
-    .chat-box {
-      width: 100%;
-      max-width: 800px;
-      background-color: #161b22;
-      border: 1px solid #30363d;
-      border-radius: 12px;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      height: 80vh;
-    }
-    .messages {
-      flex: 1;
-      overflow-y: auto;
-      padding: 1rem;
-    }
-    .assistant-msg {
-      background-color: #238636;
-      color: white;
-      padding: 0.75rem 1rem;
-      border-radius: 10px;
-      max-width: 70%;
-      margin-bottom: 10px;
-    }
-    .user-msg {
-      background-color: #1f6feb;
-      color: white;
-      padding: 0.75rem 1rem;
-      border-radius: 10px;
-      max-width: 70%;
-      margin-bottom: 10px;
-      align-self: flex-end;
-    }
-    .input-area {
-      background-color: #0d1117;
-      border-top: 1px solid #30363d;
-      padding: 0.75rem;
-      display: flex;
-      gap: 0.5rem;
-    }
-    .input-area input {
-      background-color: #161b22;
-      color: #e6edf3;
-      border: 1px solid #30363d;
-    }
-    footer {
-      text-align: center;
-      font-size: 0.85rem;
-      color: #8b949e;
-      padding: 0.75rem;
-      border-top: 1px solid #30363d;
-    }
-  </style>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
-
-  <!-- Header -->
-  <header class="py-3 text-center">
-    <h2 class="text-success fw-bold">🛡️ Incident Response Assistant</h2>
-    <p class="text-secondary mb-0">Your AI partner for managing cybersecurity incidents</p>
-  </header>
-
-  <!-- Main Chat Interface -->
-  <div class="chat-container">
-    <div class="chat-box d-flex flex-column">
-      <div class="messages d-flex flex-column">
-        <div class="assistant-msg">Hello 👋, I’m Elvis your incident response assistant. How can I help today?</div>
-        <div class="user-msg">I think our website is under a DDoS attack.</div>
+<body class="bg-light">
+  <div class="container mt-5">
+    <div class="card shadow-lg">
+      <div class="card-header bg-primary text-white">
+        <h4 class="mb-0">🛡️ Incident Response Assistant</h4>
       </div>
+      <div class="card-body">
+        <div id="chat-box" class="mb-3" style="height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 5px; background: #fafafa;">
+          <p class="text-muted">Ask your cybersecurity or incident response question below.</p>
+        </div>
+        <div class="input-group">
+          <input type="text" id="user-input" class="form-control" placeholder="Type your question...">
+          <button id="send-btn" class="btn btn-primary">Send</button>
+        </div>
 
-      <!-- Input Field -->
-      <form class="input-area" id="chat-form">
-        <input type="text" id="user-input" class="form-control" placeholder="Type your incident or question..." required>
-        <button type="submit" class="btn btn-success px-4">Send</button>
-      </form>
+        <!-- 🔄 Spinner -->
+        <div id="loading" class="text-center mt-3" style="display: none;">
+          <div class="spinner-border text-primary" role="status"></div>
+          <p class="mt-2 text-muted">Analyzing your question...</p>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Footer -->
-  <footer>
-    © 2025 Elvis Khaoya | Built for cybersecurity awareness & training.
-  </footer>
+    
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.getElementById("send-btn").addEventListener("click", async () => {
+      const userInput = document.getElementById("user-input");
+      const chatBox = document.getElementById("chat-box");
+      const loading = document.getElementById("loading");
 
-<script>
-  const form = document.getElementById('chat-form');
-  const input = document.getElementById('user-input');
-  const messages = document.querySelector('.messages');
+      const message = userInput.value.trim();
+      if (!message) return;
 
-  form.addEventListener('submit', async e => {
-    e.preventDefault();
-    const text = input.value.trim();
-    if (!text) return;
+      // Add user message
+      chatBox.innerHTML += `<p><strong>You:</strong> ${message}</p>`;
+      userInput.value = "";
 
-    // Add user message
-    const userMsg = document.createElement('div');
-    userMsg.className = 'user-msg';
-    userMsg.textContent = text;
-    messages.appendChild(userMsg);
-    messages.scrollTop = messages.scrollHeight;
+      // Show spinner
+      loading.style.display = "block";
 
-    input.value = '';
+      try {
+        const response = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message }),
+        });
 
-    // Send to Flask backend
-    const response = await fetch("/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text })
+        const data = await response.json();
+
+        // Hide spinner
+        loading.style.display = "none";
+
+        chatBox.innerHTML += `<p><strong>Bot:</strong> ${data.response}</p>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
+      } catch (error) {
+        loading.style.display = "none";
+        chatBox.innerHTML += `<p class="text-danger"><strong>Error:</strong> Could not connect to server.</p>`;
+      }
     });
-
-    const data = await response.json();
-
-    // Add AI reply
-    const botMsg = document.createElement('div');
-    botMsg.className = 'assistant-msg';
-    botMsg.innerHTML = `<b>${data.category}:</b><br>${data.response.replace(/\n/g, '<br>')}`;
-    messages.appendChild(botMsg);
-    messages.scrollTop = messages.scrollHeight;
-  });
-</script>
-
-
-
+  </script>
+  <footer class="text-center mt-4 mb-2 text-muted">
+    <small>Elvis Khaoya © 2025</small>
 </body>
 </html>
